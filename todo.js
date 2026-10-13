@@ -12,7 +12,7 @@ function loadTodos() {
     todos = [];
   }
 }
-
+// 【第3次提交】持久化：localStorage 读写，带 try/catch 兜底
 // ===== 保存：try/catch 兜底 =====
 function save() {
   try {
@@ -47,7 +47,7 @@ function clearCompleted() {
   todos = todos.filter(t => !t.done);
   save(); render();
 }
-
+// 【第2次提交】筛选：all / active / completed，仅影响视图，不改 todos
 // ===== 筛选 =====
 function setFilter(f) {
   filter = f;

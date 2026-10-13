@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo V2.0 - 韩瑞凯 2024150233</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="app">
+    <header class="app__header">
+      <h1>我的待办清单 V2.0</h1>
+      <p class="app__subtitle">韩瑞凯 · 2024150233</p>
+    </header>
+
+    <section class="app__input-area">
+      <input type="text" id="todo-input" class="app__input"
+             placeholder="输入任务，按回车或点击添加" autocomplete="off">
+      <button id="add-btn" class="app__add-btn">添加</button>
+    </section>
+
+    <section class="app__filter-area">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="active">未完成</button>
+      <button class="filter-btn" data-filter="completed">已完成</button>
+    </section>
+
+    <section class="app__list-area">
+      <ul id="todo-list" class="todo-list"></ul>
+      <p id="empty-tip" class="empty-tip">暂无任务，添加一条吧～</p>
+    </section>
+
+    <footer class="app__footer">
+      <span id="count" class="app__count">剩余 0 项未完成</span>
+      <button id="clear-btn" class="app__clear-btn">清除已完成</button>
+    </footer>
+  </main>
+
+  <script src="todo.js" defer></script>
+</body>
+</html>

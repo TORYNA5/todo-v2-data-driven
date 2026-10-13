@@ -12,7 +12,7 @@ function loadTodos() {
     todos = [];
   }
 }
-
+// 【第3次提交】持久化：localStorage 读写，带 try/catch 兜底
 // ===== 保存：try/catch 兜底 =====
 function save() {
   try {

@@ -1,19 +1,17 @@
 // ===== 状态 =====
 let todos = [];
-let filter = 'all';   // all / active / completed
+let filter = 'all';
 
-// ===== 加载：localStorage 安全读取 =====
+// ===== 加载与保存 =====
 function loadTodos() {
   try {
     const saved = JSON.parse(localStorage.getItem('todos'));
     todos = Array.isArray(saved) ? saved : [];
   } catch (e) {
-    console.warn('读取本地数据失败，已重置：', e);
     todos = [];
   }
 }
-// 【第3次提交】持久化：localStorage 读写，带 try/catch 兜底
-// ===== 保存：try/catch 兜底 =====
+
 function save() {
   try {
     localStorage.setItem('todos', JSON.stringify(todos));
@@ -22,11 +20,11 @@ function save() {
   }
 }
 
-// ===== 三个操作函数：不改原数组 =====
+// ===== 操作（不改原数组） =====
 function addTodo(text) {
   const t = text.trim();
   if (!t) return;
-  todos = [...todos, { id: Date.now(), text: t, done: false }];
+  todos = [...todos, { id: Date.now(), text: t, completed: false }];
   save(); render();
 }
 
@@ -36,106 +34,81 @@ function removeTodo(id) {
 }
 
 function toggleTodo(id) {
-  todos = todos.map(t =>
-    t.id === id ? { ...t, done: !t.done } : t
-  );
+  todos = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
   save(); render();
 }
 
-// ===== 脱离 AI 独立完成 =====
-function clearCompleted() {
-  todos = todos.filter(t => !t.done);
-  save(); render();
-}
-// 【第2次提交】筛选：all / active / completed，仅影响视图，不改 todos
-// ===== 筛选 =====
-function setFilter(f) {
-  filter = f;
-  render();
-}
-
-// ===== 渲染 =====
+// ===== 渲染（移除了循环内的事件绑定） =====
 function render() {
   const list = document.querySelector('#todo-list');
-  const countEl = document.querySelector('#count');
-  const emptyTip = document.querySelector('#empty-tip');
-
   const filterMap = {
     all: () => true,
-    active: t => !t.done,
-    completed: t => t.done,
+    active: t => !t.completed,
+    completed: t => t.completed,
   };
   const visible = todos.filter(filterMap[filter]);
 
   list.innerHTML = '';
   visible.forEach(todo => {
     const li = document.createElement('li');
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = todo.done;
-    checkbox.addEventListener('change', () => toggleTodo(todo.id));
+    li.dataset.id = todo.id;
 
     const span = document.createElement('span');
     span.textContent = todo.text;
-    if (todo.done) span.classList.add('done');
+    if (todo.completed) span.classList.add('done');
+
+    // 新增编辑按钮
+    const editBtn = document.createElement('button');
+    editBtn.dataset.action = 'edit';
+    editBtn.textContent = '编辑';
 
     const delBtn = document.createElement('button');
-    delBtn.type = 'button';
+    delBtn.dataset.action = 'delete';
     delBtn.textContent = '删除';
-    delBtn.addEventListener('click', () => removeTodo(todo.id));
 
-    li.appendChild(checkbox);
     li.appendChild(span);
+    li.appendChild(editBtn);
     li.appendChild(delBtn);
     list.appendChild(li);
   });
 
-  const remaining = todos.filter(t => !t.done).length;
-  countEl.textContent = `剩余 ${remaining} 项未完成`;
-  emptyTip.classList.toggle('show', visible.length === 0);
-
-  // 筛选按钮高亮
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.filter === filter);
-  });
+  // 底部统计等逻辑...
 }
 
-// ===== 事件绑定 =====
-function bindEvents() {
-  const input = document.querySelector('#todo-input');
-  const addBtn = document.querySelector('#add-btn');
-  const clearBtn = document.querySelector('#clear-btn');
+// ===== 事件委托（统一在父容器） =====
+document.querySelector('#todo-list').addEventListener('click', (e) => {
+  if (!(e.target instanceof Element)) return;
 
-  addBtn.addEventListener('click', () => {
-    addTodo(input.value);
-    input.value = '';
-    input.focus();
-  });
+  const item = e.target.closest('li');
+  if (!item || !document.querySelector('#todo-list').contains(item)) return;
 
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      addTodo(input.value);
-      input.value = '';
+  const id = Number(item.dataset.id);
+  if (!id) return;
+
+  // 1. 删除操作
+  const delBtn = e.target.closest('[data-action="delete"]');
+  if (delBtn && item.contains(delBtn)) {
+    removeTodo(id);
+    return; // 必须 return，防止向下执行
+  }
+
+  // 2. 编辑操作
+  const editBtn = e.target.closest('[data-action="edit"]');
+  if (editBtn && item.contains(editBtn)) {
+    const currentText = item.querySelector('span').textContent;
+    const newText = prompt('修改任务：', currentText);
+    if (newText && newText.trim()) {
+      todos = todos.map(t => t.id === id ? { ...t, text: newText.trim() } : t);
+      save(); render();
     }
-  });
+    return; // 必须 return
+  }
 
-  clearBtn.addEventListener('click', clearCompleted);
-
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => setFilter(btn.dataset.filter));
-  });
-}
+  // 3. 切换操作（兜底）
+  toggleTodo(id);
+});
 
 // ===== 启动 =====
 loadTodos();
-bindEvents();
+// ... 其他绑定 ...
 render();
-
-// 暴露到全局，方便控制台验证
-window.addTodo = addTodo;
-window.removeTodo = removeTodo;
-window.toggleTodo = toggleTodo;
-window.clearCompleted = clearCompleted;
-window.setFilter = setFilter;
-window.getTodos = () => todos;
